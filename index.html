@@ -21,6 +21,21 @@
             justify-content: flex-start;
             align-items: flex-start;
         }
+        #video-container {
+            text-align: center; 
+        }
+        
+        #video-container img {
+            width: 1200px;
+            height: 1000px;
+        }
+
+        #startButton {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            font-size: 18px;
+        }
 
         #video-stream {
             width: 1200px;
@@ -81,10 +96,15 @@
 <body>
     <body onload="selectDesign('NecklaceDesign')"></body>
     <h1>Jewellery AI Trail</h1>
+    <button id="startButton">Start Camera</button>
+    <div id="video-container" style="display: none;">
+        <img id="video-stream" src="" alt="Live Webcam Stream">
+    </div> 
+    
     <div class="content-container">
-        <div id="video-container">
+        <!-- <div id="video-container">
             <img id="video-stream" src="{{ url_for('video_feed') }}" alt="Live Webcam Stream">
-        </div>
+        </div> -->
 
         <div>
             <p><a href="#" onclick="selectDesign('RingDesign')"><h1>Ring Design</h1></a></p>
@@ -237,6 +257,48 @@
             const img = document.getElementById("video-stream");
             img.src = `{{ url_for('video_feed') }}?selected_accessory=${design}`;
         }
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('startButton').addEventListener('click', function() {
+                document.getElementById('video-container').style.display = 'block';
+                navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(function(stream) {
+                        var videoElement = document.createElement('video');
+                        videoElement.srcObject = stream;
+                        videoElement.play();
+
+                        var canvas = document.createElement('canvas');
+                        var context = canvas.getContext('2d');
+
+                        function sendFrame() {
+                            canvas.width = videoElement.videoWidth;
+                            canvas.height = videoElement.videoHeight;
+                            context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+                            canvas.toBlob(function(blob) {
+                                var formData = new FormData();
+                                formData.append('frame', blob, 'frame.jpg');
+                                formData.append('design', selectedDesign);
+                                fetch('/process_frame', {
+                                    method: 'POST',
+                                    body: formData
+                                })
+                                .then(response => response.blob())
+                                .then(imageBlob => {
+                                    var imageUrl = URL.createObjectURL(imageBlob);
+                                    document.getElementById('video-stream').src = imageUrl;
+                                    requestAnimationFrame(sendFrame);
+                                });
+                            }, 'image/jpeg');
+                        }
+
+                        sendFrame();
+                    })
+                    .catch(function(error) {
+                        console.error("Error accessing the camera:", error);
+                    });
+            });
+        });
+
+
     </script>
 </body>
 </html>

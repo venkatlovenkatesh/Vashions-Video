@@ -26,6 +26,22 @@
             text-shadow: 2px 2px 4px #333; /* Add a subtle text shadow */
             letter-spacing: 2px; /* Increase letter spacing */
         }
+
+        #startButton {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            font-size: 18px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #startButton:hover {
+            background-color: #45a049;
+        }
         
     
         #video-container {
@@ -101,10 +117,13 @@
 <body>
     <body onload="selectDesign('NecklaceDesign')"></body>
     <h2>Jewellery AI Trail</h2>
+
+    <button id="startButton">Start Camera</button>
+    <div id="video-container" style="display: none;">
+        <img id="video-stream" src="" alt="Live Webcam Stream">
+    </div>
     <div class="content-container">
-        <div id="video-container">
-            <img id="video-stream" src="{{ url_for('video_feed') }}" alt="Live Webcam Stream">
-        </div>
+        
 
         <div style="height: 1500px; overflow: auto;">
         <div class="content-container">
@@ -283,6 +302,38 @@
             const img = document.getElementById("video-stream");
             img.src = `{{ url_for('video_feed') }}?selected_accessory=${design}`;
         }
+        let stream;
+
+        document.getElementById('startButton').addEventListener('click', function() {
+            document.getElementById('video-container').style.display = 'block';
+            startCamera();
+        });
+
+        function startCamera() {
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(function(stream) {
+                    window.stream = stream;
+                    var videoElement = document.createElement('video');
+                    videoElement.srcObject = stream;
+                    videoElement.play();
+
+                    function sendFrame() {
+                        // ... (existing frame sending code)
+                    }
+                    sendFrame();
+                })
+                .catch(function(error) {
+                    console.error("Error accessing the camera:", error);
+                });
+        }
+
+        window.addEventListener('beforeunload', function() {
+            if (window.stream) {
+                window.stream.getTracks().forEach(track => track.stop());
+            }
+        });
+
+
     </script>
 </body>
 </html>
