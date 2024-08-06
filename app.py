@@ -50,13 +50,7 @@ def get_available_cameras():
     return camera_indexes
 
 def get_video_capture():
-    cameras = get_available_cameras()
-    if cameras:
-        return cv2.VideoCapture(cameras[0])
-    else:
-        # If no cameras found, attempt to create a virtual camera
-        subprocess.run(["sudo", "modprobe", "v4l2loopback"])
-        return cv2.VideoCapture(0)
+    return cv2.VideoCapture('/dev/video0')
     
 cap = get_video_capture()
 
