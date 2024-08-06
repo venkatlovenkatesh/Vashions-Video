@@ -3,7 +3,6 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import logging
-import subprocess
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -40,18 +39,12 @@ default_bangle_image_path = 'static/Image/Bangle/bangle_1.png'
 hand_in_frame = False
 
 # Create a VideoCapture object to capture video from the webcam (index 0)
-def get_available_cameras():
-    camera_indexes = []
-    for i in range(10):  # Check first 10 indexes
+def get_video_capture():
+    for i in range(10):
         cap = cv2.VideoCapture(i)
         if cap.isOpened():
-            camera_indexes.append(i)
-            cap.release()
-    return camera_indexes
-
-def get_video_capture():
-    return cv2.VideoCapture('/dev/video0')
-    
+            return cap
+    return cv2.VideoCapture(0)
 cap = get_video_capture()
 
 def generate_frames(design, ring_image_path, necklace_image_path, earring_image_path, bangle_image_path):
