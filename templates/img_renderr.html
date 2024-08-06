@@ -42,6 +42,21 @@
         #startButton:hover {
             background-color: #45a049;
         }
+        #endButton {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            font-size: 18px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        #endButton:hover {
+            background-color: #45a049;
+        }
         
     
         #video-container {
@@ -119,8 +134,9 @@
     <h2>Jewellery AI Trail</h2>
 
     <button id="startButton">Start Camera</button>
-    <div id="video-container" style="display: none;">
-        <img id="video-stream" src="" alt="Live Webcam Stream">
+    <button id="endButton" disabled>End Camera</button>
+    <div id="videoContainer">
+        <video id="video" width="640" height="480" autoplay></video>
     </div>
     <div class="content-container">
         
@@ -302,36 +318,32 @@
             const img = document.getElementById("video-stream");
             img.src = `{{ url_for('video_feed') }}?selected_accessory=${design}`;
         }
+        const video = document.getElementById('video');
+        const startButton = document.getElementById('startButton');
+        const endButton = document.getElementById('endButton');
         let stream;
 
-        document.getElementById('startButton').addEventListener('click', function() {
-            document.getElementById('video-container').style.display = 'block';
-            startCamera();
-        });
-
-        function startCamera() {
-            navigator.mediaDevices.getUserMedia({ video: true })
-                .then(function(stream) {
-                    window.stream = stream;
-                    var videoElement = document.createElement('video');
-                    videoElement.srcObject = stream;
-                    videoElement.play();
-
-                    function sendFrame() {
-                        // ... (existing frame sending code)
-                    }
-                    sendFrame();
-                })
-                .catch(function(error) {
-                    console.error("Error accessing the camera:", error);
-                });
-        }
-
-        window.addEventListener('beforeunload', function() {
-            if (window.stream) {
-                window.stream.getTracks().forEach(track => track.stop());
+        startButton.addEventListener('click', async () => {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+                startButton.disabled = true;
+                endButton.disabled = false;
+            } catch (error) {
+                console.error("Error accessing the camera: ", error);
             }
         });
+
+        endButton.addEventListener('click', () => {
+            if (stream) {
+                const tracks = stream.getTracks();
+                tracks.forEach(track => track.stop());
+                video.srcObject = null;
+                startButton.disabled = false;
+                endButton.disabled = true;
+            }
+        });
+
 
 
     </script>
