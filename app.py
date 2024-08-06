@@ -3,6 +3,7 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import logging
+import subprocess
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -39,23 +40,25 @@ default_bangle_image_path = 'static/Image/Bangle/bangle_1.png'
 hand_in_frame = False
 
 # Create a VideoCapture object to capture video from the webcam (index 0)
-def get_video_capture():
-    camera_indexes = [0, 1, 2, 3]  # Extend this list if needed
-    for index in camera_indexes:
-        cap = cv2.VideoCapture(index)
+def get_available_cameras():
+    camera_indexes = []
+    for i in range(10):  # Check first 10 indexes
+        cap = cv2.VideoCapture(i)
         if cap.isOpened():
-            print(f"Successfully opened camera at index {index}")
-            return cap
-    print("No camera found. Using fallback method.")
-    return cv2.VideoCapture(0)
+            camera_indexes.append(i)
+            cap.release()
+    return camera_indexes
+
+def get_video_capture():
+    cameras = get_available_cameras()
+    if cameras:
+        return cv2.VideoCapture(cameras[0])
+    else:
+        # If no cameras found, attempt to create a virtual camera
+        subprocess.run(["sudo", "modprobe", "v4l2loopback"])
+        return cv2.VideoCapture(0)
+    
 cap = get_video_capture()
-while True:
-    ret, frame = cap.read()
-    if not ret:
-        print("Failed to capture frame. Reinitializing camera.")
-        cap.release()
-        cap = get_video_capture()
-        continue
 
 def generate_frames(design, ring_image_path, necklace_image_path, earring_image_path, bangle_image_path):
     global hand_in_frame
