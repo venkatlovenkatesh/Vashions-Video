@@ -136,7 +136,9 @@
     <button id="startButton">Start Camera</button>
     <button id="endButton" disabled>End Camera</button>
     <div id="videoContainer">
-        <video id="video" width="640" height="480" autoplay></video>
+        <video id="video" width="640" height="480" autoplay playsinline></video>
+        <img id="processed-video" width="640" height="480" style="display:none;">
+
     </div>
     <div class="content-container">
         
@@ -286,11 +288,10 @@
         }
     
         function selectNecklace(necklaceName) {
-            // Check if Necklace Design is currently selected
-            if (selectedDesign === "NecklaceDesign") {
-                // Update the video stream with the selected necklace
-                const img = document.getElementById("video-stream");
-                img.src = `{{ url_for('video_feed') }}?selected_accessory=NecklaceDesign&necklace_image_path=static/Image/Necklace/${necklaceName}`;
+            selectedDesign = "NecklaceDesign";
+            currentNecklacePath = `static/Image/Necklace/${necklaceName}`;
+            if (stream && stream.active) {
+                sendFramesToServer();
             }
         }
     
@@ -319,6 +320,7 @@
             img.src = `{{ url_for('video_feed') }}?selected_accessory=${design}`;
         }
         const video = document.getElementById('video');
+        const processedVideo = document.getElementById('processed-video');
         const startButton = document.getElementById('startButton');
         const endButton = document.getElementById('endButton');
         let stream;
@@ -327,8 +329,11 @@
             try {
                 stream = await navigator.mediaDevices.getUserMedia({ video: true });
                 video.srcObject = stream;
+                video.style.display = 'block';
+                processedVideo.style.display = 'none';
                 startButton.disabled = true;
                 endButton.disabled = false;
+                sendFramesToServer();
             } catch (error) {
                 console.error("Error accessing the camera: ", error);
             }
@@ -339,10 +344,43 @@
                 const tracks = stream.getTracks();
                 tracks.forEach(track => track.stop());
                 video.srcObject = null;
+                video.style.display = 'none';
+                processedVideo.style.display = 'none';
                 startButton.disabled = false;
                 endButton.disabled = true;
             }
         });
+
+        async function sendFramesToServer() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            while (stream && stream.active) {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                ctx.drawImage(video, 0, 0);
+                
+                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg'));
+                const formData = new FormData();
+                formData.append('frame', blob);
+                formData.append('design', selectedDesign);
+                formData.append('necklace_image_path', currentNecklacePath);
+                
+                const response = await fetch('/process_frame', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const processedImageBlob = await response.blob();
+                const processedImageUrl = URL.createObjectURL(processedImageBlob);
+                document.getElementById('processed-video').src = processedImageUrl;
+                document.getElementById('processed-video').style.display = 'block';
+                document.getElementById('video').style.display = 'none';
+                
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+        }
+
 
 
 

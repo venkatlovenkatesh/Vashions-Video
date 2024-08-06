@@ -39,13 +39,7 @@ default_bangle_image_path = 'static/Image/Bangle/bangle_1.png'
 hand_in_frame = False
 
 # Create a VideoCapture object to capture video from the webcam (index 0)
-def get_video_capture():
-    for i in range(10):
-        cap = cv2.VideoCapture(i)
-        if cap.isOpened():
-            return cap
-    return cv2.VideoCapture(-1)
-cap = get_video_capture()
+cap = cv2.VideoCapture(0)
 
 def generate_frames(design, ring_image_path, necklace_image_path, earring_image_path, bangle_image_path):
     global hand_in_frame
@@ -70,6 +64,8 @@ def generate_frames(design, ring_image_path, necklace_image_path, earring_image_
             left_section = frame[:, :side_width]
             center_section = frame[:, side_width:side_width + center_width]
             right_section = frame[:, side_width + center_width:]
+
+            
 
         # Get the width and height of the frame
         
@@ -244,80 +240,50 @@ def generate_frames(design, ring_image_path, necklace_image_path, earring_image_
                     hand_in_frame = left_ear_detected and right_ear_detected
 
             elif design == "Necklace Design":
-                # Process the center section for face detection and overlay
                 frame_rgb = cv2.cvtColor(center_section, cv2.COLOR_BGR2RGB)
                 results = face_detection.process(frame_rgb)
                 
                 if results.detections:
                     for detection in results.detections:
-                        # Iterate over the landmarks and draw them on the frame
-                        for idx, landmark in enumerate(detection.location_data.relative_keypoints):
-                            # Get the pixel coordinates of the landmark
-                            cx, cy = int(landmark.x * center_width), int(landmark.y * height)
+                        bboxC = detection.location_data.relative_bounding_box
+                        hC, wC, _ = center_section.shape
+                        xminC = int(bboxC.xmin * wC)
+                        yminC = int(bboxC.ymin * hC)
+                        widthC = int(bboxC.width * wC)
+                        heightC = int(bboxC.height * hC)
+                        xmaxC = xminC + widthC
+                        ymaxC = yminC + heightC
 
-                            # Check if hand is within the valid region
-                            if cx >= 0 and cx <= center_width:
-                                hand_in_frame = True
+                        # Adjust necklace position and size
+                        necklace_y = ymaxC + int(heightC * 0.1)  # Place necklace slightly below the face
+                        necklace_width = int(widthC * 1.5)  # Make necklace wider than face
+                        necklace_height = int(necklace_width * necklace_image.shape[0] / necklace_image.shape[1])
 
-                            # Extract the bounding box coordinates
-                            bboxC = detection.location_data.relative_bounding_box
-                            hC, wC, _ = center_section.shape
-                            xminC = int(bboxC.xmin * wC)
-                            yminC = int(bboxC.ymin * hC)
-                            widthC = int(bboxC.width * wC)
-                            heightC = int(bboxC.height * hC)
-                            xmaxC = xminC + widthC
-                            ymaxC = yminC + heightC
+                        # Ensure necklace stays within frame
+                        if necklace_y + necklace_height > hC:
+                            necklace_height = hC - necklace_y
+                        if xminC - (necklace_width - widthC) // 2 < 0:
+                            xminC = (necklace_width - widthC) // 2
+                        if xmaxC + (necklace_width - widthC) // 2 > wC:
+                            xmaxC = wC - (necklace_width - widthC) // 2
 
-                            # Calculate the bottom bounding box coordinates
-                            bottom_ymin = ymaxC + 10
-                            bottom_ymax = min(ymaxC + 150, hC)
+                        # Resize and position necklace
+                        resized_necklace = cv2.resize(necklace_image, (necklace_width, necklace_height))
+                        necklace_xmin = xminC - (necklace_width - widthC) // 2
+                        necklace_xmax = necklace_xmin + necklace_width
 
-                            # Increase the width of the red bounding box
-                            xminC -= 20  # Decrease the left side
-                            xmaxC += 20  # Increase the right side
+                        # Create mask for blending
+                        mask = resized_necklace[:, :, 3] if resized_necklace.shape[2] == 4 else np.ones(resized_necklace.shape[:2], dtype=np.uint8) * 255
+                        mask = mask / 255.0
+                        mask = np.repeat(mask[:, :, np.newaxis], 3, axis=2)
 
-                            # Check if the bounding box dimensions are valid
-                            if widthC > 0 and heightC > 0 and xmaxC > xminC and bottom_ymax > bottom_ymin:
-                                # Resize necklace image to fit the bounding box size
-                                resized_image = cv2.resize(necklace_image, (xmaxC - xminC, bottom_ymax - bottom_ymin))
+                        # Blend necklace with frame
+                        roi = center_section[necklace_y:necklace_y+necklace_height, necklace_xmin:necklace_xmax]
+                        blended = (1.0 - mask) * roi + mask * resized_necklace[:, :, :3]
+                        center_section[necklace_y:necklace_y+necklace_height, necklace_xmin:necklace_xmax] = blended
 
-                                # Calculate the start and end coordinates for the necklace image
-                                start_x = xminC
-                                start_y = bottom_ymin
-                                end_x = start_x + (xmaxC - xminC)
-                                end_y = start_y + (bottom_ymax - bottom_ymin)
+                hand_in_frame = True
 
-                                # Create a mask from the alpha channel
-                                alpha_channel = resized_image[:, :, 3]
-                                mask = alpha_channel[:, :, np.newaxis] / 255.0
-
-                                # Apply the mask to the necklace image
-                                overlay = resized_image[:, :, :3] * mask
-
-                                # Create a mask for the input image region
-                                mask_inv = 1 - mask
-
-                                # Apply the inverse mask to the input image
-                                region = center_section[start_y:end_y, start_x:end_x]
-                                resized_mask_inv = None
-                                if region.shape[1] > 0 and region.shape[0] > 0:
-                                    resized_mask_inv = cv2.resize(mask_inv, (region.shape[1], region.shape[0]))
-                                    resized_mask_inv = resized_mask_inv[:, :, np.newaxis]  # Add an extra dimension to match the number of channels
-
-                                if resized_mask_inv is not None:
-                                    region_inv = region * resized_mask_inv
-
-                                    # Combine the resized image and the input image region
-                                    resized_overlay = None
-                                    if region_inv.shape[1] > 0 and region_inv.shape[0] > 0:
-                                        resized_overlay = cv2.resize(overlay, (region_inv.shape[1], region_inv.shape[0]))
-
-                                    # Combine the resized overlay and region_inv
-                                    region_combined = cv2.add(resized_overlay, region_inv)
-
-                                    # Replace the neck region in the input image with the combined region
-                                    center_section[start_y:end_y, start_x:end_x] = region_combined
 
 
 
@@ -399,12 +365,52 @@ def generate_frames(design, ring_image_path, necklace_image_path, earring_image_
             yield (b'--frame\r\n'
                     b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
         
-        
+def process_necklace_design(frame, necklace_image_path):
+    necklace_image = cv2.imread(necklace_image_path, cv2.IMREAD_UNCHANGED)
+    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    results = face_detection.process(frame_rgb)
+    
+    if results.detections:
+        for detection in results.detections:
+            bboxC = detection.location_data.relative_bounding_box
+            ih, iw, _ = frame.shape
+            x, y, w, h = int(bboxC.xmin * iw), int(bboxC.ymin * ih), int(bboxC.width * iw), int(bboxC.height * ih)
+            
+            # Adjust necklace position
+            necklace_y = y + h + 10
+            necklace_width = w + 40  # Increase width to cover neck area
+            necklace_height = int(necklace_width * necklace_image.shape[0] / necklace_image.shape[1])
+            
+            resized_necklace = cv2.resize(necklace_image, (necklace_width, necklace_height))
+            
+            # Ensure the necklace doesn't go out of frame
+            if necklace_y + necklace_height > ih:
+                necklace_height = ih - necklace_y
+                resized_necklace = cv2.resize(necklace_image, (necklace_width, necklace_height))
+            
+            # Create a mask for the necklace
+            mask = resized_necklace[:, :, 3] if resized_necklace.shape[2] == 4 else 255
+            mask = cv2.resize(mask, (necklace_width, necklace_height))
+            
+            # Region of interest in the frame
+            roi = frame[necklace_y:necklace_y+necklace_height, x-20:x+necklace_width-20]
+            
+            # Blend the necklace with the frame
+            for c in range(0, 3):
+                roi[:, :, c] = roi[:, :, c] * (1 - mask / 255.0) + \
+                               resized_necklace[:, :, c] * (mask / 255.0)
+            
+            # Put the blended image back into the frame
+            frame[necklace_y:necklace_y+necklace_height, x-20:x+necklace_width-20] = roi
+    
+    return frame
+
 
 
 @app.route('/')
 def index():
     return render_template('img_renderr.html')
+
 @app.route('/process_frame', methods=['POST'])
 def process_frame():
     if 'frame' not in request.files:
@@ -414,15 +420,15 @@ def process_frame():
     frame = cv2.imdecode(npimg, cv2.IMREAD_COLOR)
     
     design = request.form.get('design', 'NecklaceDesign')
-    ring_image_path = request.form.get('ring_image_path', default_ring_image_path)
     necklace_image_path = request.form.get('necklace_image_path', default_necklace_image_path)
-    earring_image_path = request.form.get('earring_image_path', default_earring_image_path)
-    bangle_image_path = request.form.get('bangle_image_path', default_bangle_image_path)
+    if design == "NecklaceDesign":
+        frame = process_necklace_design(frame, necklace_image_path)
     
-    processed_frame = process_frame_with_design(frame, design, ring_image_path, necklace_image_path, earring_image_path, bangle_image_path)
-    
-    _, buffer = cv2.imencode('.jpg', processed_frame)
+    _, buffer = cv2.imencode('.jpg', frame)
     return Response(buffer.tobytes(), mimetype='image/jpeg')
+
+
+
 def process_frame_with_design(frame, design, ring_image_path, necklace_image_path, earring_image_path, bangle_image_path):
     if design == "Ring Design":
         frame = process_ring_design(frame, ring_image_path)
@@ -433,6 +439,7 @@ def process_frame_with_design(frame, design, ring_image_path, necklace_image_pat
     elif design == "Bangle Design":
         frame = process_bangle_design(frame, bangle_image_path)
     return frame
+
 
 def process_ring_design(frame, ring_image_path):
     ring_image = cv2.imread(ring_image_path, cv2.IMREAD_UNCHANGED)
