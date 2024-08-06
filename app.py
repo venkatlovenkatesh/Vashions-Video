@@ -40,12 +40,22 @@ hand_in_frame = False
 
 # Create a VideoCapture object to capture video from the webcam (index 0)
 def get_video_capture():
-    for i in range(10):
-        cap = cv2.VideoCapture(i)
+    camera_indexes = [0, 1, 2, 3]  # Extend this list if needed
+    for index in camera_indexes:
+        cap = cv2.VideoCapture(index)
         if cap.isOpened():
+            print(f"Successfully opened camera at index {index}")
             return cap
+    print("No camera found. Using fallback method.")
     return cv2.VideoCapture(0)
 cap = get_video_capture()
+while True:
+    ret, frame = cap.read()
+    if not ret:
+        print("Failed to capture frame. Reinitializing camera.")
+        cap.release()
+        cap = get_video_capture()
+        continue
 
 def generate_frames(design, ring_image_path, necklace_image_path, earring_image_path, bangle_image_path):
     global hand_in_frame
