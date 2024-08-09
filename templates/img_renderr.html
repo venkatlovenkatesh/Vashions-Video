@@ -2,354 +2,260 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jewellery AI Trail</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Arial', sans-serif;
             margin: 0;
+            padding: 0;
+            background-color: #f0f8ff;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
             padding: 20px;
-            background-color: #4eaeef; /* Change to a blue background color */
-            color: #fff; /* Set text color to white */
         }
-    
+        header {
+            background-color: #4eaeef;
+            color: white;
+            text-align: center;
+            padding: 20px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
         h1 {
-            text-align: left;
-            margin-bottom: 30px;
-            color: #eef7ef; /* Darken the heading text color */
-            font-size: 40px; /
+            font-size: 2.5em;
+            margin: 0;
         }
-
-        h2 {
-            font-size: 48px; /* Increase font size */
-            color: #ffcc00; /* Attractive text color */
-            text-transform: uppercase; /* Uppercase text */
-            text-shadow: 2px 2px 4px #333; /* Add a subtle text shadow */
-            letter-spacing: 2px; /* Increase letter spacing */
-        }
-
-        #startButton {
+        #cameraButton {
             display: block;
             margin: 20px auto;
-            padding: 10px 20px;
+            padding: 12px 24px;
             font-size: 18px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        #startButton:hover {
-            background-color: #45a049;
-        }
-        #endButton {
-            display: block;
-            margin: 20px auto;
-            padding: 10px 20px;
-            font-size: 18px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        #endButton:hover {
-            background-color: #45a049;
-        }
-        
-    
-        #video-container {
-            display: flex;
-            justify-content: flex-start;
-            align-items: flex-start;
-        }
-    
-        #video-stream {
-            width: 1200px;
-            height: 1000px;
-            background-color: #3498db; /* Attractive blue background */
-            border: 5px solid #f5f0ef; /* Red border for contrast */
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* Subtle shadow effect */
-        }
-
-    
-        .image-container {
-            display: inline-block;
-            margin: 10px;
-            text-align: left;
-            cursor: pointer;
-            background-color: #2687c8; /* Add a white background to image containers */
-            border-radius: 10px; /* Round the corners */
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2); /* Add a subtle shadow */
-            transition: transform 0.3s ease;
-        }
-    
-        .image-container img {
-            width: 320px;
-            height: 300px;
-            border: 3px solid #3498db; /* Match border color with background */
-            border-radius: 5px;
-            transition: transform 0.3s ease;
-        }
-    
-        .image-container:hover {
-            transform: scale(1.1);
-        }
-    
-        .image-container p {
-            margin: 5px 0;
             font-weight: bold;
-            color: #333; /* Darken text color */
+            color: white;
+            background-color: #4CAF50;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
         }
-    
-        .gallery-container {
+        #cameraButton:hover {
+            background-color: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        #videoContainer.hidden {
+            display: none;
+        }
+        #videoContainer {
             display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-            align-items: flex-start;
-            margin-top: 20px;
+            justify-content: center;
+            margin: 20px 0;
+            width: 100%;
         }
-    
+
+        #video, #processed-video {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
         .content-container {
             display: flex;
+            flex-direction: column;
         }
-    
-        .content-container > div {
-            margin-right: 20px;
-        }
-    
-        .image-containers-wrapper {
+
+        .gallery-section.fullpage {
+            min-height: 100vh;
             display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 20px;
+            box-sizing: border-box;
         }
-    
-        .image-containers-wrapper > div {
-            margin-right: 20px;
+
+        .gallery-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .jewel-container {
+            flex: 0 0 calc(25% - 20px);
+            margin: 10px;
+        }
+
+        .image-container {
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .jewel-container:hover .image-container {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        .image-container img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .image-container p {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        @media (max-width: 1200px) {
+            .jewel-container {
+                flex: 0 0 calc(33.33% - 20px);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .jewel-container {
+                flex: 0 0 calc(50% - 20px);
+            }
         }
     </style>
     
 </head>
-<body>
-    <body onload="selectDesign('NecklaceDesign')"></body>
-    <h2>Jewellery AI Trail</h2>
+<body onload="selectDesign('NecklaceDesign')">
+    <header>
+        <h1>Jewellery AI Trial</h1>
+        <button id="cameraButton">Start Camera</button>
+    </header>
 
-    <button id="startButton">Start Camera</button>
-    <button id="endButton" disabled>End Camera</button>
-    <div id="videoContainer">
-        <video id="video" width="640" height="480" autoplay playsinline></video>
-        <img id="processed-video" width="640" height="480" style="display:none;">
+    <main>
+        <div id="videoContainer" class="hidden">
+            <video id="video" width="960" height="720" autoplay playsinline></video>
+            <img id="processed-video" width="960" height="720" style="display:none;">
+        </div>
 
-    </div>
-    <div class="content-container">
-        
-
-        <div style="height: 1500px; overflow: auto;">
         <div class="content-container">
-        <div>
+            {% for category in ['Necklace', 'Ring', 'Earring', 'Bangle'] %}
+            <section class="gallery-section fullpage" id="{{ category.lower() }}Design">
+                <h2><a href="#" onclick="selectDesign('{{ category }}Design')">{{ category }} Design</a></h2>
+                <div class="gallery-container">
+                    {% set images = {
+                        'Necklace': ['necklace_1.png', 'necklace_18.png', 'necklace_24.png', 'necklace_23.png', 'necklace_12.png', 'necklace_17.png', 'necklace_20.png', 'necklace_15.png'],
+                        'Ring': ['ring_1.png', 'ring_2.png', 'ring_3.png', 'ring_4.png', 'ring_5.png', 'ring_6.png', 'ring_7.png'],
+                        'Earring': ['earring_1.png', 'earring_2.png', 'earring_3.png', 'earring_4.png', 'earring_5.png'],
+                        'Bangle': ['bangle_1.png', 'bangle_2.png', 'bangle_3.png', 'bangle_4.png', 'bangle_5.png']
+                    } %}
+                    {% for image in images[category] %}
+                    <div class="jewel-container">
+                        <div class="image-container" onclick="select{{ category }}('{{ image }}')">
+                            <img src="{{ url_for('static', filename='Image/' + category + '/' + image) }}">
+                            <p>{{ image.split('.')[0]|capitalize }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endfor %}
+        </div>
+        </div>
+    </main>
+</body>
 
-            <p><a href="#" onclick="selectDesign('RingDesign')"><h1>Ring Design</h1></a></p>
-            <div class="gallery-container">
-                <div class="image-container" onclick="selectRing('ring_1.png')">
-                    <img src="{{ url_for('static', filename='Image/Ring/ring_1.png') }}">
-                    <p>Ring 1</p>
-                </div>
-                <div class="image-container" onclick="selectRing('ring_2.png')">
-                    <img src="{{ url_for('static', filename='Image/Ring/ring_2.png') }}">
-                    <p>Ring 2</p>
-                </div>
-                <div class="image-container" onclick="selectRing('ring_3.png')">
-                    <img src="{{ url_for('static', filename='Image/Ring/ring_3.png') }}">
-                    <p>Ring 3</p>
-                </div>
-                <div class="image-container" onclick="selectRing('ring_4.png')">
-                    <img src="{{ url_for('static', filename='Image/Ring/ring_4.png') }}">
-                    <p>Ring 4</p>
-                </div>
-                <div class="image-container" onclick="selectRing('ring_5.png')">
-                    <img src="{{ url_for('static', filename='Image/Ring/ring_5.png') }}">
-                    <p>Ring 5</p>
-                </div>
-                <div class="image-container" onclick="selectRing('ring_6.png')">
-                    <img src="{{ url_for('static', filename='Image/Ring/ring_6.png') }}">
-                    <p>Ring 6</p>
-                </div>
-                <div class="image-container" onclick="selectRing('ring_7.png')">
-                    <img src="{{ url_for('static', filename='Image/Ring/ring_7.png') }}">
-                    <p>Ring 7</p>
-                </div>
-            </div>
-        </div>
-
-        <div>
-            <p><a href="#" onclick="selectDesign('NecklaceDesign')"><h1>Necklace Design</h1></a></p>
-            <div class="gallery-container">
-                <div class="image-container" onclick="selectNecklace('necklace_1.png')">
-                    <img src="{{ url_for('static', filename='Image/Necklace/necklace_1.png') }}">
-                    <p>Necklace 1</p>
-                </div>
-                <div class="image-container" onclick="selectNecklace('necklace_18.png')">
-                    <img src="{{ url_for('static', filename='Image/Necklace/necklace_18.png') }}">
-                    <p>Necklace 2</p>
-                </div>
-                <div class="image-container" onclick="selectNecklace('necklace_24.png')">
-                    <img src="{{ url_for('static', filename='Image/Necklace/necklace_24.png') }}">
-                    <p>Necklace 3</p>
-                </div>
-                <div class="image-container" onclick="selectNecklace('necklace_23.png')">
-                    <img src="{{ url_for('static', filename='Image/Necklace/necklace_23.png') }}">
-                    <p>Necklace 4</p>
-                </div>
-                <div class="image-container" onclick="selectNecklace('necklace_12.png')">
-                    <img src="{{ url_for('static', filename='Image/Necklace/necklace_12.png') }}">
-                    <p>Necklace 5</p>
-                </div>
-                <div class="image-container" onclick="selectNecklace('necklace_17.png')">
-                    <img src="{{ url_for('static', filename='Image/Necklace/necklace_17.png') }}">
-                    <p>Necklace 6</p>
-                </div>
-                <div class="image-container" onclick="selectNecklace('necklace_20.png')">
-                    <img src="{{ url_for('static', filename='Image/Necklace/necklace_20.png') }}">
-                    <p>Necklace 7</p>
-                </div>
-                <div class="image-container" onclick="selectNecklace('necklace_15.png')">
-                    <img src="{{ url_for('static', filename='Image/Necklace/necklace_15.png') }}">
-                    <p>Necklace 8</p>
-                </div>
-            </div>
-        </div>
-
-        <div>
-            <p><a href="#" onclick="selectDesign('EarringDesign')"><h1>Earring Design</h1></a></p>
-            <div class="gallery-container">
-                <div class="image-container" onclick="selectEarring('earring_1.png')">
-                    <img src="{{ url_for('static', filename='Image/Earring/earring_1.png') }}">
-                    <p>Earring 1</p>
-                </div>
-                <div class="image-container" onclick="selectEarring('earring_2.png')">
-                    <img src="{{ url_for('static', filename='Image/Earring/earring_2.png') }}">
-                    <p>Earring 2</p>
-                </div>
-                <div class="image-container" onclick="selectEarring('earring_3.png')">
-                    <img src="{{ url_for('static', filename='Image/Earring/earring_3.png') }}">
-                    <p>Earring 3</p>
-                </div>
-                <div class="image-container" onclick="selectEarring('earring_4.png')">
-                    <img src="{{ url_for('static', filename='Image/Earring/earring_4.png') }}">
-                    <p>Earring 4</p>
-                </div>
-                <div class="image-container" onclick="selectEarring('earring_5.png')">
-                    <img src="{{ url_for('static', filename='Image/Earring/earring_5.png') }}">
-                    <p>Earring 5</p>
-                </div>
-            </div>
-        </div>
-
-        <div>
-            <p><a href="#" onclick="selectDesign('BangleDesign')"><h1>Bangle Design</h1></a></p>
-            <div class="gallery-container">
-                <div class="image-container" onclick="selectBangle('bangle_1.png')">
-                    <img src="{{ url_for('static', filename='Image/Bangle/bangle_1.png') }}">
-                    <p>Bangle 1</p>
-                </div>
-                <div class="image-container" onclick="selectBangle('bangle_2.png')">
-                    <img src="{{ url_for('static', filename='Image/Bangle/bangle_2.png') }}">
-                    <p>Bangle 2</p>
-                </div>
-                <div class="image-container" onclick="selectBangle('bangle_3.png')">
-                    <img src="{{ url_for('static', filename='Image/Bangle/bangle_3.png') }}">
-                    <p>Bangle 3</p>
-                </div>
-                <div class="image-container" onclick="selectBangle('bangle_4.png')">
-                    <img src="{{ url_for('static', filename='Image/Bangle/bangle_4.png') }}">
-                    <p>Bangle 4</p>
-                </div>
-                <div class="image-container" onclick="selectBangle('bangle_5.png')">
-                    <img src="{{ url_for('static', filename='Image/Bangle/bangle_5.png') }}">
-                    <p>Bangle 5</p>
-                </div>
-            </div>
-        </div>
-
-        </div>
-        </div>
-    </div>
 
     <script>
         // Initialize the selected accessory type to None
         let selectedDesign = "";
     
         function selectRing(ringName) {
-            // Check if Ring Design is currently selected
-            if (selectedDesign === "RingDesign") {
-                // Update the video stream with the selected ring
-                const img = document.getElementById("video-stream");
-                img.src = `{{ url_for('video_feed') }}?selected_accessory=RingDesign&ring_image_path=static/Image/Ring/${ringName}`;
+            currentDesign = "RingDesign";
+            currentRingPath = `static/Image/Ring/${ringName}`;
+            selectDesign(currentDesign);
+            if (stream && stream.active) {
+                sendFramesToServer();
             }
         }
-    
+
         function selectNecklace(necklaceName) {
-            selectedDesign = "NecklaceDesign";
+            currentDesign = "NecklaceDesign";
             currentNecklacePath = `static/Image/Necklace/${necklaceName}`;
+            selectDesign(currentDesign);
+            if (stream && stream.active) {
+                sendFramesToServer();
+            }
+        }
+
+        function selectEarring(earringName) {
+            currentDesign = "EarringDesign";
+            currentEarringPath = `static/Image/Earring/${earringName}`;
+            selectDesign(currentDesign);
+            if (stream && stream.active) {
+                sendFramesToServer();
+            }
+        }
+
+        function selectBangle(bangleName) {
+            currentDesign = "BangleDesign";
+            currentBanglePath = `static/Image/Bangle/${bangleName}`;
+            selectDesign(currentDesign);
             if (stream && stream.active) {
                 sendFramesToServer();
             }
         }
     
-        function selectEarring(earringName) {
-            // Check if Earring Design is currently selected
-            if (selectedDesign === "EarringDesign") {
-                // Update the video stream with the selected earring
-                const img = document.getElementById("video-stream");
-                img.src = `{{ url_for('video_feed') }}?selected_accessory=EarringDesign&earring_image_path=static/Image/Earring/${earringName}`;
-            }
-        }
-    
-        function selectBangle(bangleName) {
-            // Check if Bangle Design is currently selected
-            if (selectedDesign === "BangleDesign") {
-                // Update the video stream with the selected bangle
-                const img = document.getElementById("video-stream");
-                img.src = `{{ url_for('video_feed') }}?selected_accessory=BangleDesign&bangle_image_path=static/Image/Bangle/${bangleName}`;
-            }
-        }
-    
+        let currentDesign = "NecklaceDesign";
+
         function selectDesign(design) {
-            selectedDesign = design;
-            // Clear the video stream to show the selected accessory type without any specific item
-            const img = document.getElementById("video-stream");
-            img.src = `{{ url_for('video_feed') }}?selected_accessory=${design}`;
+            currentDesign = design;
+            fetch(`/update_design?design=${design}`, {method: 'POST'})
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        console.log(`Design updated to ${design}`);
+                        if (stream && stream.active) {
+                            sendFramesToServer();
+                        }
+                    }
+                });
         }
+        const cameraButton = document.getElementById('cameraButton');
         const video = document.getElementById('video');
         const processedVideo = document.getElementById('processed-video');
-        const startButton = document.getElementById('startButton');
-        const endButton = document.getElementById('endButton');
         let stream;
+        let isStreamActive = false;
 
-        startButton.addEventListener('click', async () => {
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                video.srcObject = stream;
-                video.style.display = 'block';
-                processedVideo.style.display = 'none';
-                startButton.disabled = true;
-                endButton.disabled = false;
-                sendFramesToServer();
-            } catch (error) {
-                console.error("Error accessing the camera: ", error);
+        cameraButton.addEventListener('click', async () => {
+            if (!isStreamActive) {
+                try {
+                    stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    video.srcObject = stream;
+                    video.style.display = 'block';
+                    processedVideo.style.display = 'none';
+                    cameraButton.textContent = 'End Camera';
+                    isStreamActive = true;
+                    document.getElementById('videoContainer').classList.remove('hidden');
+                    sendFramesToServer();
+                } catch (error) {
+                    console.error("Error accessing the camera: ", error);
+                }
+            } else {
+                if (stream) {
+                    const tracks = stream.getTracks();
+                    tracks.forEach(track => track.stop());
+                    video.srcObject = null;
+                    video.style.display = 'none';
+                    processedVideo.style.display = 'none';
+                    cameraButton.textContent = 'Start Camera';
+                    isStreamActive = false;
+                    document.getElementById('videoContainer').classList.add('hidden');
+                    
+                }
             }
         });
-
-        endButton.addEventListener('click', () => {
-            if (stream) {
-                const tracks = stream.getTracks();
-                tracks.forEach(track => track.stop());
-                video.srcObject = null;
-                video.style.display = 'none';
-                processedVideo.style.display = 'none';
-                startButton.disabled = false;
-                endButton.disabled = true;
-            }
-        });
+    
 
         async function sendFramesToServer() {
             const canvas = document.createElement('canvas');
@@ -363,8 +269,8 @@
                 const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg'));
                 const formData = new FormData();
                 formData.append('frame', blob);
-                formData.append('design', selectedDesign);
-                formData.append('necklace_image_path', currentNecklacePath);
+                formData.append('design', currentDesign);
+                formData.append('jewelry_path', getCurrentJewelryPath());
                 
                 const response = await fetch('/process_frame', {
                     method: 'POST',
@@ -380,6 +286,17 @@
                 await new Promise(resolve => setTimeout(resolve, 100));
             }
         }
+
+        function getCurrentJewelryPath() {
+            switch(currentDesign) {
+                case 'NecklaceDesign': return currentNecklacePath;
+                case 'RingDesign': return currentRingPath;
+                case 'EarringDesign': return currentEarringPath;
+                case 'BangleDesign': return currentBanglePath;
+                default: return '';
+            }
+        }
+
 
 
 
